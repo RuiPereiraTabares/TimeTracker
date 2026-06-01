@@ -525,12 +525,12 @@ const LANGS = {
     heroLabel: 'Horas Extra Acumuladas (Total)',
     heroFirst: 'Registra tu primer día para empezar',
     heroDetail: (month, year, monthOT, totalDays) =>
-      `${month} ${year}: ${monthOT}h extra · ${totalDays} días registrados en total`,
+      `${month} ${year}: ${monthOT} extra · ${totalDays} días registrados en total`,
     // Messages
     msgFillAll: '⚠️ Por favor llena todos los campos',
     msgInvalidRange: '⚠️ Rango de horas inválido',
     msgOverwrite: (date) => `Ya existe un registro para ${date}. ¿Deseas reemplazarlo?`,
-    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours}h trabajadas (${ot}h extra)`,
+    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours} trabajadas (${ot} extra)`,
     msgDeleteConfirm: (date) => `¿Eliminar el registro del ${date}?`,
     msgDeleted: '🗑️ Registro eliminado',
     msgNoEntries: 'No hay registros todavía. ¡Registra tu primer día!',
@@ -547,7 +547,7 @@ const LANGS = {
     msgClearConfirm2: '¿De verdad segura? Esto no se puede deshacer.',
     msgCleared: '🗑️ Todos los datos fueron eliminados',
     // Week card
-    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} día(s) · ${hours}h trabajadas`,
+    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} día(s) · ${hours} trabajadas`,
     weekBarLabel: (wk) => `Sem ${wk}`,
     // CSV headers
     csvDate: 'Fecha', csvDay: 'Día', csvWeek: 'Semana', csvStart: 'Entrada', csvEnd: 'Salida',
@@ -600,11 +600,11 @@ const LANGS = {
     heroLabel: 'Horas Extra Acumuladas (Total)',
     heroFirst: 'Regista o teu primeiro dia para começar',
     heroDetail: (month, year, monthOT, totalDays) =>
-      `${month} ${year}: ${monthOT}h extra · ${totalDays} dias registados no total`,
+      `${month} ${year}: ${monthOT} extra · ${totalDays} dias registados no total`,
     msgFillAll: '⚠️ Por favor preenche todos os campos',
     msgInvalidRange: '⚠️ Intervalo de horas inválido',
     msgOverwrite: (date) => `Já existe um registo para ${date}. Queres substituí-lo?`,
-    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours}h trabalhadas (${ot}h extra)`,
+    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours} trabalhadas (${ot} extra)`,
     msgDeleteConfirm: (date) => `Eliminar o registo de ${date}?`,
     msgDeleted: '🗑️ Registo eliminado',
     msgNoEntries: 'Ainda não há registos. Regista o teu primeiro dia!',
@@ -620,7 +620,7 @@ const LANGS = {
     msgClearConfirm1: '⚠️ Isto irá eliminar TODOS os registos. Tens a certeza?',
     msgClearConfirm2: 'Mesmo a certeza? Isto não pode ser desfeito.',
     msgCleared: '🗑️ Todos os dados foram eliminados',
-    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} dia(s) · ${hours}h trabalhadas`,
+    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} dia(s) · ${hours} trabalhadas`,
     weekBarLabel: (wk) => `Sem ${wk}`,
     csvDate: 'Data', csvDay: 'Dia', csvWeek: 'Semana', csvStart: 'Entrada', csvEnd: 'Saída',
     csvBreak: 'Pausa (min)', csvWorked: 'Horas Trabalhadas', csvStandard: 'Horas Padrão',
@@ -714,17 +714,25 @@ function calcHours(start, end, breakMin) {
   return Math.round((diff - breakMin) / 60 * 100) / 100;
 }
 
+function fmtHM(decimalHours) {
+  const abs = Math.abs(decimalHours);
+  const h = Math.floor(abs);
+  const m = Math.round((abs - h) * 60);
+  const sign = decimalHours < 0 ? '-' : '';
+  return m === 0 ? `${sign}${h}h` : `${sign}${h}h ${m}m`;
+}
+
 function fmtOT(val) {
   const r = Math.round(val * 100) / 100;
-  const sign = r >= 0 ? '+' : '';
+  const sign = r > 0 ? '+' : '';
   const cls = r > 0 ? 'ot-pos' : r < 0 ? 'ot-neg' : 'ot-zero';
-  return `<span class="${cls}">${sign}${r}h</span>`;
+  return `<span class="${cls}">${sign}${fmtHM(r)}</span>`;
 }
 
 function fmtOTPlain(val) {
   const r = Math.round(val * 100) / 100;
-  const sign = r >= 0 ? '+' : '';
-  return `${sign}${r}h`;
+  const sign = r > 0 ? '+' : '';
+  return `${sign}${fmtHM(r)}`;
 }
 
 function dayName(dateStr) {
@@ -808,8 +816,8 @@ function renderHero() {
 
   el.innerHTML = `
     <div class="ot-label">${T('heroLabel')}</div>
-    <div class="ot-value ${cls}">${sign}${balance}h</div>
-    <div class="ot-detail">${T('heroDetail')(monthName(now.getMonth()), now.getFullYear(), monthSign + monthOT, entries.length)}</div>`;
+    <div class="ot-value ${cls}">${sign}${fmtHM(balance)}</div>
+    <div class="ot-detail">${T('heroDetail')(monthName(now.getMonth()), now.getFullYear(), monthSign + fmtHM(monthOT), entries.length)}</div>`;
 }
 
 // ── Tabs ──
@@ -850,7 +858,7 @@ function addEntry() {
   saveEntries(entries);
 
   const sign = overtime >= 0 ? '+' : '';
-  toast(T('msgLogged')(date, hours, sign + overtime));
+  toast(T('msgLogged')(date, fmtHM(hours), sign + fmtHM(overtime)));
   refresh();
 }
 
@@ -877,7 +885,7 @@ function renderRecent() {
     ${entries.map(e => `<tr>
       <td>${e.date}</td><td>${dayName(e.date)}</td>
       <td>${e.start}</td><td>${e.end}</td>
-      <td>${e.breakMin}m</td><td>${e.hours}h</td>
+      <td>${e.breakMin}m</td><td>${fmtHM(e.hours)}</td>
       <td>${fmtOT(e.overtime)}</td>
       <td><button class="btn btn-danger" onclick="deleteEntry('${e.date}')">✕</button></td>
     </tr>`).join('')}
@@ -909,8 +917,8 @@ function renderWeekly() {
 
   document.getElementById('weekly-summary').innerHTML = `
     <div class="summary-box"><div class="label">${T('days')}</div><div class="value">${entries.length}</div></div>
-    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${totalHours}h</div></div>
-    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${expected}h</div></div>
+    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${fmtHM(totalHours)}</div></div>
+    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${fmtHM(expected)}</div></div>
     <div class="summary-box highlight"><div class="label">${T('overtime')}</div><div class="value">${fmtOT(totalOT)}</div></div>
   `;
 
@@ -933,14 +941,14 @@ function renderWeekly() {
       return `<tr>
         <td>${e.date}</td><td>${dayName(e.date)}</td>
         <td>${e.start}</td><td>${e.end}</td>
-        <td>${e.hours}h</td>
+        <td>${fmtHM(e.hours)}</td>
         <td>${fmtOT(e.overtime)}</td>
         <td>${fmtOT(cumOT)}</td>
       </tr>`;
     }).join('')}
     <tr style="font-weight:700;background:#f4f3ff;">
       <td colspan="4">${T('totalWeek')}</td>
-      <td>${totalHours}h</td>
+      <td>${fmtHM(totalHours)}</td>
       <td colspan="2">${fmtOT(totalOT)}</td>
     </tr>
   </table>`;
@@ -970,8 +978,8 @@ function renderMonthly() {
 
   document.getElementById('monthly-summary').innerHTML = `
     <div class="summary-box"><div class="label">${T('days')}</div><div class="value">${entries.length}</div></div>
-    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${totalHours}h</div></div>
-    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${expected}h</div></div>
+    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${fmtHM(totalHours)}</div></div>
+    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${fmtHM(expected)}</div></div>
     <div class="summary-box highlight"><div class="label">${T('monthlyOTLabel')}</div><div class="value">${fmtOT(totalOT)}</div></div>
   `;
 
@@ -1002,7 +1010,7 @@ function renderMonthly() {
     const wOT = Math.round((wHours - wEntries.length * STANDARD_HOURS) * 100) / 100;
 
     html += `<div class="week-ot-card" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-      <div class="wk-info">${T('weekCard')(wk, wEntries.length, wHours)}</div>
+      <div class="wk-info">${T('weekCard')(wk, wEntries.length, fmtHM(wHours))}</div>
       <div class="wk-ot">${fmtOT(wOT)}</div>
     </div>`;
 
@@ -1016,7 +1024,7 @@ function renderMonthly() {
           return `<tr>
             <td>${e.date}</td><td>${dayName(e.date)}</td>
             <td>${e.start}</td><td>${e.end}</td>
-            <td>${e.hours}h</td>
+            <td>${fmtHM(e.hours)}</td>
             <td>${fmtOT(e.overtime)}</td>
             <td>${fmtOT(cumOT)}</td>
           </tr>`;
