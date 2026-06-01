@@ -34,11 +34,32 @@
     padding: 24px 20px 16px;
     text-align: center;
     box-shadow: var(--shadow);
+    position: relative;
   }
   header h1 { font-size: 1.6rem; margin-bottom: 4px; }
   header p { opacity: 0.85; font-size: 0.9rem; }
 
-  /* Hero overtime banner */
+  .lang-switch {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+  }
+  .lang-btn {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid transparent;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lang-btn:hover { background: rgba(255,255,255,0.35); }
+  .lang-btn.active { border-color: white; background: rgba(255,255,255,0.3); }
+
   .overtime-hero {
     background: linear-gradient(135deg, #2d3436, #636e72);
     color: white;
@@ -247,7 +268,6 @@
   }
   .month-nav span { font-weight: 700; font-size: 1rem; min-width: 140px; text-align: center; }
 
-  /* Overtime bar chart */
   .ot-bar-row {
     display: flex;
     align-items: center;
@@ -272,7 +292,6 @@
   .ot-bar-fill.pos { background: linear-gradient(90deg, #d63031, #ff7675); }
   .ot-bar-fill.neg { background: linear-gradient(90deg, #00b894, #55efc4); color: #2d3436; }
   .ot-bar-fill.zero { background: #dfe6e9; color: #636e72; }
-  .ot-bar-val { width: 60px; font-weight: 700; }
 
   .file-drop {
     border: 2px dashed var(--border);
@@ -336,57 +355,57 @@
     .summary-grid { grid-template-columns: 1fr 1fr; }
     .tab-btn { font-size: 0.75rem; padding: 10px 4px; }
     .overtime-hero .ot-value { font-size: 1.8rem; }
+    .lang-switch { position: static; justify-content: center; margin-top: 10px; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⏰ Control de Horas Extra</h1>
-  <p>Registra tus horas y lleva el control de tu sobretiempo</p>
+  <div class="lang-switch">
+    <button class="lang-btn" data-lang="es" onclick="setLang('es')">🇻🇪 ES</button>
+    <button class="lang-btn" data-lang="pt" onclick="setLang('pt')">🇵🇹 PT</button>
+  </div>
+  <h1 id="header-title">⏰</h1>
+  <p id="header-subtitle"></p>
 </header>
 
 <div class="overtime-hero" id="overtime-hero"></div>
 
 <div class="container">
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="log">📝 Registrar</button>
-    <button class="tab-btn" data-tab="weekly">📅 Semanal</button>
-    <button class="tab-btn" data-tab="monthly">📊 Mensual</button>
-    <button class="tab-btn" data-tab="csv">💾 CSV</button>
-  </div>
+  <div class="tabs" id="tabs-bar"></div>
 
   <!-- REGISTRAR -->
   <div id="tab-log" class="tab-content active">
     <div class="card">
-      <h2>Registrar Día de Trabajo</h2>
+      <h2 id="log-title"></h2>
       <div class="form-row">
         <div class="form-group">
-          <label>Fecha</label>
+          <label id="lbl-date"></label>
           <input type="date" id="entry-date">
         </div>
         <div class="form-group">
-          <label>Descanso (minutos)</label>
+          <label id="lbl-break"></label>
           <input type="number" id="entry-break" value="0" min="0" step="5">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Hora de Entrada</label>
+          <label id="lbl-start"></label>
           <input type="time" id="entry-start" value="09:00">
         </div>
         <div class="form-group">
-          <label>Hora de Salida</label>
+          <label id="lbl-end"></label>
           <input type="time" id="entry-end" value="17:00">
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="addEntry()">✅ Registrar</button>
+        <button class="btn btn-primary" id="btn-log" onclick="addEntry()"></button>
       </div>
     </div>
 
     <div class="card">
-      <h2>Últimos Registros</h2>
+      <h2 id="recent-title"></h2>
       <div class="table-wrap" id="recent-entries"></div>
     </div>
   </div>
@@ -400,7 +419,7 @@
         <button onclick="changeWeek(1)">▶</button>
       </div>
       <div class="summary-grid" id="weekly-summary"></div>
-      <h2 style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;">Horas Extra por Día</h2>
+      <h2 id="weekly-bars-title" style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;"></h2>
       <div id="weekly-bars"></div>
       <div class="table-wrap detail-table" id="weekly-table"></div>
     </div>
@@ -415,7 +434,7 @@
         <button onclick="changeMonth(1)">▶</button>
       </div>
       <div class="summary-grid" id="monthly-summary"></div>
-      <h2 style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;">Horas Extra por Semana</h2>
+      <h2 id="monthly-bars-title" style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;"></h2>
       <div id="monthly-week-bars"></div>
       <div id="monthly-weeks-detail"></div>
     </div>
@@ -424,53 +443,260 @@
   <!-- CSV -->
   <div id="tab-csv" class="tab-content">
     <div class="card">
-      <h2>Subir CSV</h2>
-      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">
-        Sube un CSV exportado anteriormente para restaurar tus datos. Se <strong>combinarán</strong> con los registros existentes.
-      </p>
+      <h2 id="csv-upload-title"></h2>
+      <p id="csv-upload-desc" style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;"></p>
       <div class="file-drop" id="file-drop">
         <div class="icon">📂</div>
-        <div>Haz clic o arrastra un archivo CSV aquí</div>
+        <div id="file-drop-text"></div>
         <input type="file" id="csv-upload" accept=".csv">
       </div>
     </div>
 
     <div class="card">
-      <h2>Descargar CSV</h2>
-      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">
-        Exporta tus horas extra como CSV — uno por mes para llevar el control.
-      </p>
+      <h2 id="csv-download-title"></h2>
+      <p id="csv-download-desc" style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;"></p>
       <div class="form-row">
         <div class="form-group">
-          <label>Mes</label>
+          <label id="lbl-month"></label>
           <select id="export-month"></select>
         </div>
         <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;">
-          <button class="btn btn-accent" onclick="downloadMonthCSV()">📥 Descargar Mes</button>
-          <button class="btn btn-outline" onclick="downloadAllCSV()">📦 Todos</button>
+          <button class="btn btn-accent" id="btn-dl-month" onclick="downloadMonthCSV()"></button>
+          <button class="btn btn-outline" id="btn-dl-all" onclick="downloadAllCSV()"></button>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>Administrar Datos</h2>
+      <h2 id="csv-manage-title"></h2>
       <div class="btn-row">
-        <button class="btn btn-danger" onclick="clearAllData()">🗑️ Borrar Todo</button>
+        <button class="btn btn-danger" id="btn-clear" onclick="clearAllData()"></button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+// ══════════════════════════════════════
+//  LANGUAGE SYSTEM
+// ══════════════════════════════════════
+const LANGS = {
+  es: {
+    // Header
+    title: '⏰ Control de Horas Extra',
+    subtitle: 'Registra tus horas y lleva el control de tu sobretiempo',
+    // Tabs
+    tabLog: '📝 Registrar',
+    tabWeekly: '📅 Semanal',
+    tabMonthly: '📊 Mensual',
+    tabCSV: '💾 CSV',
+    // Log form
+    logTitle: 'Registrar Día de Trabajo',
+    lblDate: 'Fecha',
+    lblBreak: 'Descanso (minutos)',
+    lblStart: 'Hora de Entrada',
+    lblEnd: 'Hora de Salida',
+    btnLog: '✅ Registrar',
+    recentTitle: 'Últimos Registros',
+    // Table headers
+    thDate: 'Fecha', thDay: 'Día', thStart: 'Entrada', thEnd: 'Salida',
+    thBreak: 'Desc.', thWorked: 'Trabajó', thOT: 'Extra', thAccum: 'Acumulado',
+    // Weekly
+    weeklyBarsTitle: 'Horas Extra por Día',
+    week: 'Semana',
+    totalWeek: 'TOTAL SEMANA',
+    // Monthly
+    monthlyBarsTitle: 'Horas Extra por Semana',
+    monthlyOTLabel: '⏱ Horas Extra del Mes',
+    // Summary boxes
+    days: 'Días', hours: 'Trabajó', expected: 'Esperadas', overtime: '⏱ Horas Extra',
+    // CSV
+    csvUploadTitle: 'Subir CSV',
+    csvUploadDesc: 'Sube un CSV exportado anteriormente para restaurar tus datos. Se <strong>combinarán</strong> con los registros existentes.',
+    fileDropText: 'Haz clic o arrastra un archivo CSV aquí',
+    csvDownloadTitle: 'Descargar CSV',
+    csvDownloadDesc: 'Exporta tus horas extra como CSV — uno por mes para llevar el control.',
+    lblMonth: 'Mes',
+    btnDlMonth: '📥 Descargar Mes',
+    btnDlAll: '📦 Todos',
+    csvManageTitle: 'Administrar Datos',
+    btnClear: '🗑️ Borrar Todo',
+    // Hero
+    heroLabel: 'Horas Extra Acumuladas (Total)',
+    heroFirst: 'Registra tu primer día para empezar',
+    heroDetail: (month, year, monthOT, totalDays) =>
+      `${month} ${year}: ${monthOT}h extra · ${totalDays} días registrados en total`,
+    // Messages
+    msgFillAll: '⚠️ Por favor llena todos los campos',
+    msgInvalidRange: '⚠️ Rango de horas inválido',
+    msgOverwrite: (date) => `Ya existe un registro para ${date}. ¿Deseas reemplazarlo?`,
+    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours}h trabajadas (${ot}h extra)`,
+    msgDeleteConfirm: (date) => `¿Eliminar el registro del ${date}?`,
+    msgDeleted: '🗑️ Registro eliminado',
+    msgNoEntries: 'No hay registros todavía. ¡Registra tu primer día!',
+    msgNoEntriesWeek: 'No hay registros esta semana',
+    msgNoEntriesMonth: 'No hay registros este mes',
+    msgNoData: 'Sin datos',
+    msgNoExport: '⚠️ No hay datos para exportar',
+    msgDownloaded: (f) => `📥 Descargado ${f}`,
+    msgDownloadedAll: (n) => `📦 Descargados ${n} archivo(s)`,
+    msgInvalidCSV: '⚠️ Formato de CSV inválido',
+    msgImported: (n) => `✅ Se importaron ${n} registros`,
+    msgSelectCSV: '⚠️ Por favor selecciona un archivo CSV',
+    msgClearConfirm1: '⚠️ Esto eliminará TODOS los registros. ¿Estás segura?',
+    msgClearConfirm2: '¿De verdad segura? Esto no se puede deshacer.',
+    msgCleared: '🗑️ Todos los datos fueron eliminados',
+    // Week card
+    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} día(s) · ${hours}h trabajadas`,
+    weekBarLabel: (wk) => `Sem ${wk}`,
+    // CSV headers
+    csvDate: 'Fecha', csvDay: 'Día', csvWeek: 'Semana', csvStart: 'Entrada', csvEnd: 'Salida',
+    csvBreak: 'Descanso (min)', csvWorked: 'Horas Trabajadas', csvStandard: 'Horas Estándar',
+    csvDailyOT: 'Horas Extra del Día', csvAccumOT: 'Horas Extra Acumuladas',
+    csvSummary: 'RESUMEN DEL MES', csvTotalDays: 'Total Días Trabajados',
+    csvTotalHours: 'Total Horas Trabajadas', csvExpected: 'Horas Esperadas',
+    csvTotalOT: 'TOTAL HORAS EXTRA', csvWeeklyBreakdown: 'DESGLOSE SEMANAL',
+    csvWeekCol: 'Semana', csvDaysCol: 'Días', csvWorkedCol: 'Horas Trabajadas',
+    csvExpectedCol: 'Horas Esperadas', csvOTCol: 'Horas Extra',
+    // Day/month names
+    daysShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
+    daysFull: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+    months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+  },
+
+  pt: {
+    title: '⏰ Controlo de Horas Extra',
+    subtitle: 'Regista as tuas horas e controla o teu tempo extra',
+    tabLog: '📝 Registar',
+    tabWeekly: '📅 Semanal',
+    tabMonthly: '📊 Mensal',
+    tabCSV: '💾 CSV',
+    logTitle: 'Registar Dia de Trabalho',
+    lblDate: 'Data',
+    lblBreak: 'Pausa (minutos)',
+    lblStart: 'Hora de Entrada',
+    lblEnd: 'Hora de Saída',
+    btnLog: '✅ Registar',
+    recentTitle: 'Últimos Registos',
+    thDate: 'Data', thDay: 'Dia', thStart: 'Entrada', thEnd: 'Saída',
+    thBreak: 'Pausa', thWorked: 'Trabalhou', thOT: 'Extra', thAccum: 'Acumulado',
+    weeklyBarsTitle: 'Horas Extra por Dia',
+    week: 'Semana',
+    totalWeek: 'TOTAL SEMANA',
+    monthlyBarsTitle: 'Horas Extra por Semana',
+    monthlyOTLabel: '⏱ Horas Extra do Mês',
+    days: 'Dias', hours: 'Trabalhou', expected: 'Esperadas', overtime: '⏱ Horas Extra',
+    csvUploadTitle: 'Carregar CSV',
+    csvUploadDesc: 'Carrega um CSV exportado anteriormente para restaurar os teus dados. Serão <strong>combinados</strong> com os registos existentes.',
+    fileDropText: 'Clica ou arrasta um ficheiro CSV aqui',
+    csvDownloadTitle: 'Descarregar CSV',
+    csvDownloadDesc: 'Exporta as tuas horas extra como CSV — um por mês para controlo.',
+    lblMonth: 'Mês',
+    btnDlMonth: '📥 Descarregar Mês',
+    btnDlAll: '📦 Todos',
+    csvManageTitle: 'Gerir Dados',
+    btnClear: '🗑️ Apagar Tudo',
+    heroLabel: 'Horas Extra Acumuladas (Total)',
+    heroFirst: 'Regista o teu primeiro dia para começar',
+    heroDetail: (month, year, monthOT, totalDays) =>
+      `${month} ${year}: ${monthOT}h extra · ${totalDays} dias registados no total`,
+    msgFillAll: '⚠️ Por favor preenche todos os campos',
+    msgInvalidRange: '⚠️ Intervalo de horas inválido',
+    msgOverwrite: (date) => `Já existe um registo para ${date}. Queres substituí-lo?`,
+    msgLogged: (date, hours, ot) => `✅ ${date}: ${hours}h trabalhadas (${ot}h extra)`,
+    msgDeleteConfirm: (date) => `Eliminar o registo de ${date}?`,
+    msgDeleted: '🗑️ Registo eliminado',
+    msgNoEntries: 'Ainda não há registos. Regista o teu primeiro dia!',
+    msgNoEntriesWeek: 'Sem registos esta semana',
+    msgNoEntriesMonth: 'Sem registos este mês',
+    msgNoData: 'Sem dados',
+    msgNoExport: '⚠️ Sem dados para exportar',
+    msgDownloaded: (f) => `📥 Descarregado ${f}`,
+    msgDownloadedAll: (n) => `📦 Descarregados ${n} ficheiro(s)`,
+    msgInvalidCSV: '⚠️ Formato de CSV inválido',
+    msgImported: (n) => `✅ Importados ${n} registos`,
+    msgSelectCSV: '⚠️ Por favor seleciona um ficheiro CSV',
+    msgClearConfirm1: '⚠️ Isto irá eliminar TODOS os registos. Tens a certeza?',
+    msgClearConfirm2: 'Mesmo a certeza? Isto não pode ser desfeito.',
+    msgCleared: '🗑️ Todos os dados foram eliminados',
+    weekCard: (wk, days, hours) => `<strong>Semana ${wk}</strong> — ${days} dia(s) · ${hours}h trabalhadas`,
+    weekBarLabel: (wk) => `Sem ${wk}`,
+    csvDate: 'Data', csvDay: 'Dia', csvWeek: 'Semana', csvStart: 'Entrada', csvEnd: 'Saída',
+    csvBreak: 'Pausa (min)', csvWorked: 'Horas Trabalhadas', csvStandard: 'Horas Padrão',
+    csvDailyOT: 'Horas Extra do Dia', csvAccumOT: 'Horas Extra Acumuladas',
+    csvSummary: 'RESUMO DO MÊS', csvTotalDays: 'Total Dias Trabalhados',
+    csvTotalHours: 'Total Horas Trabalhadas', csvExpected: 'Horas Esperadas',
+    csvTotalOT: 'TOTAL HORAS EXTRA', csvWeeklyBreakdown: 'DETALHE SEMANAL',
+    csvWeekCol: 'Semana', csvDaysCol: 'Dias', csvWorkedCol: 'Horas Trabalhadas',
+    csvExpectedCol: 'Horas Esperadas', csvOTCol: 'Horas Extra',
+    daysShort: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'],
+    daysFull: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+    months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+  }
+};
+
+let currentLang = localStorage.getItem('tt_lang') || 'es';
+function T(key) { return LANGS[currentLang][key]; }
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('tt_lang', lang);
+  document.documentElement.lang = lang === 'es' ? 'es-VE' : 'pt-PT';
+  applyLabels();
+  refresh();
+  // Update active button
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+}
+
+function applyLabels() {
+  document.title = T('title');
+  document.getElementById('header-title').textContent = T('title');
+  document.getElementById('header-subtitle').textContent = T('subtitle');
+
+  // Tabs
+  document.getElementById('tabs-bar').innerHTML = `
+    <button class="tab-btn active" data-tab="log">${T('tabLog')}</button>
+    <button class="tab-btn" data-tab="weekly">${T('tabWeekly')}</button>
+    <button class="tab-btn" data-tab="monthly">${T('tabMonthly')}</button>
+    <button class="tab-btn" data-tab="csv">${T('tabCSV')}</button>
+  `;
+  bindTabs();
+
+  // Log form
+  document.getElementById('log-title').textContent = T('logTitle');
+  document.getElementById('lbl-date').textContent = T('lblDate');
+  document.getElementById('lbl-break').textContent = T('lblBreak');
+  document.getElementById('lbl-start').textContent = T('lblStart');
+  document.getElementById('lbl-end').textContent = T('lblEnd');
+  document.getElementById('btn-log').textContent = T('btnLog');
+  document.getElementById('recent-title').textContent = T('recentTitle');
+
+  // Weekly / Monthly
+  document.getElementById('weekly-bars-title').textContent = T('weeklyBarsTitle');
+  document.getElementById('monthly-bars-title').textContent = T('monthlyBarsTitle');
+
+  // CSV
+  document.getElementById('csv-upload-title').textContent = T('csvUploadTitle');
+  document.getElementById('csv-upload-desc').innerHTML = T('csvUploadDesc');
+  document.getElementById('file-drop-text').textContent = T('fileDropText');
+  document.getElementById('csv-download-title').textContent = T('csvDownloadTitle');
+  document.getElementById('csv-download-desc').textContent = T('csvDownloadDesc');
+  document.getElementById('lbl-month').textContent = T('lblMonth');
+  document.getElementById('btn-dl-month').textContent = T('btnDlMonth');
+  document.getElementById('btn-dl-all').textContent = T('btnDlAll');
+  document.getElementById('csv-manage-title').textContent = T('csvManageTitle');
+  document.getElementById('btn-clear').textContent = T('btnClear');
+}
+
+// ══════════════════════════════════════
+//  CORE LOGIC
+// ══════════════════════════════════════
 const STANDARD_HOURS = 8;
 const STANDARD_WEEKLY = 40;
-
-const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const DIAS_FULL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
 
 function getEntries() {
   return JSON.parse(localStorage.getItem('tt_entries') || '[]');
@@ -502,11 +728,12 @@ function fmtOTPlain(val) {
 }
 
 function dayName(dateStr) {
-  return DIAS[new Date(dateStr + 'T00:00:00').getDay()];
+  return T('daysShort')[new Date(dateStr + 'T00:00:00').getDay()];
 }
 function dayFull(dateStr) {
-  return DIAS_FULL[new Date(dateStr + 'T00:00:00').getDay()];
+  return T('daysFull')[new Date(dateStr + 'T00:00:00').getDay()];
 }
+function monthName(idx) { return T('months')[idx]; }
 
 function getISOWeek(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -536,15 +763,13 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
-// ── Overtime bar helper ──
+// ── OT Bars ──
 function renderOTBars(entries, labelFn, container) {
   if (!entries.length) { container.innerHTML = ''; return; }
   const maxAbs = Math.max(...entries.map(e => Math.abs(e.ot)), 1);
-
   container.innerHTML = entries.map(e => {
     const pct = Math.min(Math.abs(e.ot) / maxAbs * 100, 100);
     const cls = e.ot > 0 ? 'pos' : e.ot < 0 ? 'neg' : 'zero';
-    const valCls = e.ot > 0 ? 'ot-pos' : e.ot < 0 ? 'ot-neg' : 'ot-zero';
     return `<div class="ot-bar-row">
       <div class="ot-bar-label">${labelFn(e)}</div>
       <div class="ot-bar-track">
@@ -554,16 +779,16 @@ function renderOTBars(entries, labelFn, container) {
   }).join('');
 }
 
-// ── Hero Banner ──
+// ── Hero ──
 function renderHero() {
   const entries = getEntries();
   const el = document.getElementById('overtime-hero');
 
   if (!entries.length) {
     el.innerHTML = `
-      <div class="ot-label">Horas Extra Acumuladas</div>
+      <div class="ot-label">${T('heroLabel')}</div>
       <div class="ot-value zero">0h</div>
-      <div class="ot-detail">Registra tu primer día para empezar</div>`;
+      <div class="ot-detail">${T('heroFirst')}</div>`;
     return;
   }
 
@@ -573,7 +798,6 @@ function renderHero() {
   const cls = balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'zero';
   const sign = balance >= 0 ? '+' : '';
 
-  // Current month OT
   const now = new Date();
   const monthKey = now.toISOString().slice(0, 7);
   const monthEntries = entries.filter(e => e.date.slice(0, 7) === monthKey);
@@ -583,40 +807,42 @@ function renderHero() {
   const monthSign = monthOT >= 0 ? '+' : '';
 
   el.innerHTML = `
-    <div class="ot-label">Horas Extra Acumuladas (Total)</div>
+    <div class="ot-label">${T('heroLabel')}</div>
     <div class="ot-value ${cls}">${sign}${balance}h</div>
-    <div class="ot-detail">${MESES[now.getMonth()]} ${now.getFullYear()}: ${monthSign}${monthOT}h extra · ${entries.length} días registrados en total</div>`;
+    <div class="ot-detail">${T('heroDetail')(monthName(now.getMonth()), now.getFullYear(), monthSign + monthOT, entries.length)}</div>`;
 }
 
 // ── Tabs ──
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    refresh();
+function bindTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      refresh();
+    });
   });
-});
+}
 
-// ── Registrar ──
+// ── Log Entry ──
 function addEntry() {
   const date = document.getElementById('entry-date').value;
   const start = document.getElementById('entry-start').value;
   const end = document.getElementById('entry-end').value;
   const breakMin = parseInt(document.getElementById('entry-break').value) || 0;
 
-  if (!date || !start || !end) { toast('⚠️ Por favor llena todos los campos'); return; }
+  if (!date || !start || !end) { toast(T('msgFillAll')); return; }
 
   const hours = calcHours(start, end, breakMin);
-  if (hours <= 0) { toast('⚠️ Rango de horas inválido'); return; }
+  if (hours <= 0) { toast(T('msgInvalidRange')); return; }
 
   const overtime = Math.round((hours - STANDARD_HOURS) * 100) / 100;
   const entries = getEntries();
 
   const existing = entries.findIndex(e => e.date === date);
   if (existing >= 0) {
-    if (!confirm(`Ya existe un registro para ${date}. ¿Deseas reemplazarlo?`)) return;
+    if (!confirm(T('msgOverwrite')(date))) return;
     entries.splice(existing, 1);
   }
 
@@ -624,30 +850,30 @@ function addEntry() {
   saveEntries(entries);
 
   const sign = overtime >= 0 ? '+' : '';
-  toast(`✅ ${date}: ${hours}h trabajadas (${sign}${overtime}h extra)`);
+  toast(T('msgLogged')(date, hours, sign + overtime));
   refresh();
 }
 
 function deleteEntry(date) {
-  if (!confirm(`¿Eliminar el registro del ${date}?`)) return;
+  if (!confirm(T('msgDeleteConfirm')(date))) return;
   const entries = getEntries().filter(e => e.date !== date);
   saveEntries(entries);
-  toast('🗑️ Registro eliminado');
+  toast(T('msgDeleted'));
   refresh();
 }
 
-// ── Últimos Registros ──
+// ── Recent ──
 function renderRecent() {
   const entries = getEntries().slice(-10).reverse();
   const el = document.getElementById('recent-entries');
 
   if (!entries.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>No hay registros todavía. ¡Registra tu primer día!</div></div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">📋</div><div>${T('msgNoEntries')}</div></div>`;
     return;
   }
 
   el.innerHTML = `<table>
-    <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Desc.</th><th>Trabajó</th><th>Extra</th><th></th></tr>
+    <tr><th>${T('thDate')}</th><th>${T('thDay')}</th><th>${T('thStart')}</th><th>${T('thEnd')}</th><th>${T('thBreak')}</th><th>${T('thWorked')}</th><th>${T('thOT')}</th><th></th></tr>
     ${entries.map(e => `<tr>
       <td>${e.date}</td><td>${dayName(e.date)}</td>
       <td>${e.start}</td><td>${e.end}</td>
@@ -658,7 +884,7 @@ function renderRecent() {
   </table>`;
 }
 
-// ── Vista Semanal ──
+// ── Weekly ──
 let currentWeekOffset = 0;
 
 function changeWeek(dir) {
@@ -673,41 +899,34 @@ function renderWeekly() {
   const weekNum = getISOWeek(fmtDate(start));
 
   document.getElementById('week-label').textContent =
-    `Semana ${weekNum} · ${fmtDate(start)} — ${fmtDate(end)}`;
+    `${T('week')} ${weekNum} · ${fmtDate(start)} — ${fmtDate(end)}`;
 
   const entries = getEntries().filter(e => e.date >= fmtDate(start) && e.date <= fmtDate(end));
 
   const totalHours = Math.round(entries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
   const expected = entries.length * STANDARD_HOURS;
   const totalOT = Math.round((totalHours - expected) * 100) / 100;
-  const vsWeek = Math.round((totalHours - STANDARD_WEEKLY) * 100) / 100;
 
   document.getElementById('weekly-summary').innerHTML = `
-    <div class="summary-box"><div class="label">Días</div><div class="value">${entries.length}</div></div>
-    <div class="summary-box"><div class="label">Trabajó</div><div class="value">${totalHours}h</div></div>
-    <div class="summary-box"><div class="label">Esperadas</div><div class="value">${expected}h</div></div>
-    <div class="summary-box highlight"><div class="label">⏱ Horas Extra</div><div class="value">${fmtOT(totalOT)}</div></div>
+    <div class="summary-box"><div class="label">${T('days')}</div><div class="value">${entries.length}</div></div>
+    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${totalHours}h</div></div>
+    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${expected}h</div></div>
+    <div class="summary-box highlight"><div class="label">${T('overtime')}</div><div class="value">${fmtOT(totalOT)}</div></div>
   `;
 
-  // OT bars per day
-  const barData = entries.map(e => ({
-    label: e.date,
-    ot: e.overtime,
-    day: dayName(e.date)
-  }));
+  const barData = entries.map(e => ({ label: e.date, ot: e.overtime, day: dayName(e.date) }));
   renderOTBars(barData, e => `${e.day} ${e.label.slice(8)}`, document.getElementById('weekly-bars'));
 
-  // Detail table
   const table = document.getElementById('weekly-table');
   if (!entries.length) {
-    table.innerHTML = '<div class="empty-state"><div class="icon">📅</div><div>No hay registros esta semana</div></div>';
+    table.innerHTML = `<div class="empty-state"><div class="icon">📅</div><div>${T('msgNoEntriesWeek')}</div></div>`;
     document.getElementById('weekly-bars').innerHTML = '';
     return;
   }
 
   let cumOT = 0;
   table.innerHTML = `<table>
-    <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Trabajó</th><th>Extra</th><th>Acumulado</th></tr>
+    <tr><th>${T('thDate')}</th><th>${T('thDay')}</th><th>${T('thStart')}</th><th>${T('thEnd')}</th><th>${T('thWorked')}</th><th>${T('thOT')}</th><th>${T('thAccum')}</th></tr>
     ${entries.map(e => {
       cumOT += e.overtime;
       cumOT = Math.round(cumOT * 100) / 100;
@@ -720,14 +939,14 @@ function renderWeekly() {
       </tr>`;
     }).join('')}
     <tr style="font-weight:700;background:#f4f3ff;">
-      <td colspan="4">TOTAL SEMANA</td>
+      <td colspan="4">${T('totalWeek')}</td>
       <td>${totalHours}h</td>
       <td colspan="2">${fmtOT(totalOT)}</td>
     </tr>
   </table>`;
 }
 
-// ── Vista Mensual ──
+// ── Monthly ──
 let currentMonthOffset = 0;
 
 function changeMonth(dir) {
@@ -739,9 +958,9 @@ function renderMonthly() {
   const now = new Date();
   const refDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
   const monthKey = refDate.toISOString().slice(0, 7);
-  const monthLabel = `${MESES[refDate.getMonth()]} ${refDate.getFullYear()}`;
+  const label = `${monthName(refDate.getMonth())} ${refDate.getFullYear()}`;
 
-  document.getElementById('month-label').textContent = monthLabel;
+  document.getElementById('month-label').textContent = label;
 
   const entries = getEntries().filter(e => e.date.slice(0, 7) === monthKey);
 
@@ -750,10 +969,10 @@ function renderMonthly() {
   const totalOT = Math.round((totalHours - expected) * 100) / 100;
 
   document.getElementById('monthly-summary').innerHTML = `
-    <div class="summary-box"><div class="label">Días</div><div class="value">${entries.length}</div></div>
-    <div class="summary-box"><div class="label">Trabajó</div><div class="value">${totalHours}h</div></div>
-    <div class="summary-box"><div class="label">Esperadas</div><div class="value">${expected}h</div></div>
-    <div class="summary-box highlight"><div class="label">⏱ Horas Extra del Mes</div><div class="value">${fmtOT(totalOT)}</div></div>
+    <div class="summary-box"><div class="label">${T('days')}</div><div class="value">${entries.length}</div></div>
+    <div class="summary-box"><div class="label">${T('hours')}</div><div class="value">${totalHours}h</div></div>
+    <div class="summary-box"><div class="label">${T('expected')}</div><div class="value">${expected}h</div></div>
+    <div class="summary-box highlight"><div class="label">${T('monthlyOTLabel')}</div><div class="value">${fmtOT(totalOT)}</div></div>
   `;
 
   const barsEl = document.getElementById('monthly-week-bars');
@@ -761,27 +980,21 @@ function renderMonthly() {
 
   if (!entries.length) {
     barsEl.innerHTML = '';
-    detailEl.innerHTML = '<div class="empty-state"><div class="icon">📊</div><div>No hay registros este mes</div></div>';
+    detailEl.innerHTML = `<div class="empty-state"><div class="icon">📊</div><div>${T('msgNoEntriesMonth')}</div></div>`;
     return;
   }
 
-  // Group by week
   const weeks = {};
-  entries.forEach(e => {
-    const wk = getISOWeek(e.date);
-    (weeks[wk] = weeks[wk] || []).push(e);
-  });
+  entries.forEach(e => { const wk = getISOWeek(e.date); (weeks[wk] = weeks[wk] || []).push(e); });
 
-  // Weekly OT bars
   const weekBarData = Object.keys(weeks).sort((a, b) => a - b).map(wk => {
     const we = weeks[wk];
     const wHours = we.reduce((s, e) => s + e.hours, 0);
     const wOT = Math.round((wHours - we.length * STANDARD_HOURS) * 100) / 100;
     return { label: wk, ot: wOT, days: we.length, hours: Math.round(wHours * 100) / 100 };
   });
-  renderOTBars(weekBarData, e => `Sem ${e.label}`, barsEl);
+  renderOTBars(weekBarData, e => T('weekBarLabel')(e.label), barsEl);
 
-  // Week detail cards with expandable tables
   let html = '';
   for (const wk of Object.keys(weeks).sort((a, b) => a - b)) {
     const wEntries = weeks[wk];
@@ -789,16 +1002,14 @@ function renderMonthly() {
     const wOT = Math.round((wHours - wEntries.length * STANDARD_HOURS) * 100) / 100;
 
     html += `<div class="week-ot-card" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-      <div class="wk-info">
-        <strong>Semana ${wk}</strong> — ${wEntries.length} día(s) · ${wHours}h trabajadas
-      </div>
+      <div class="wk-info">${T('weekCard')(wk, wEntries.length, wHours)}</div>
       <div class="wk-ot">${fmtOT(wOT)}</div>
     </div>`;
 
     let cumOT = 0;
     html += `<div class="table-wrap detail-table" style="display:none">
       <table>
-        <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Trabajó</th><th>Extra</th><th>Acumulado</th></tr>
+        <tr><th>${T('thDate')}</th><th>${T('thDay')}</th><th>${T('thStart')}</th><th>${T('thEnd')}</th><th>${T('thWorked')}</th><th>${T('thOT')}</th><th>${T('thAccum')}</th></tr>
         ${wEntries.map(e => {
           cumOT += e.overtime;
           cumOT = Math.round(cumOT * 100) / 100;
@@ -813,7 +1024,6 @@ function renderMonthly() {
       </table>
     </div>`;
   }
-
   detailEl.innerHTML = html;
 }
 
@@ -825,15 +1035,15 @@ function populateExportMonths() {
   sel.innerHTML = months.length
     ? months.map(m => {
         const d = new Date(m + '-01T00:00:00');
-        return `<option value="${m}">${MESES[d.getMonth()]} ${d.getFullYear()}</option>`;
+        return `<option value="${m}">${monthName(d.getMonth())} ${d.getFullYear()}</option>`;
       }).join('')
-    : '<option value="">Sin datos</option>';
+    : `<option value="">${T('msgNoData')}</option>`;
   if (months.length) sel.value = months[months.length - 1];
 }
 
 function buildCSV(entries) {
-  const rows = [['Fecha', 'Día', 'Semana', 'Entrada', 'Salida', 'Descanso (min)',
-                 'Horas Trabajadas', 'Horas Estándar', 'Horas Extra del Día', 'Horas Extra Acumuladas']];
+  const rows = [[T('csvDate'), T('csvDay'), T('csvWeek'), T('csvStart'), T('csvEnd'), T('csvBreak'),
+                 T('csvWorked'), T('csvStandard'), T('csvDailyOT'), T('csvAccumOT')]];
   let cumOT = 0;
   entries.forEach(e => {
     cumOT += e.overtime;
@@ -848,21 +1058,18 @@ function buildCSV(entries) {
   const totalOT = Math.round((totalHours - expected) * 100) / 100;
 
   rows.push([]);
-  rows.push(['RESUMEN DEL MES']);
-  rows.push(['Total Días Trabajados', entries.length]);
-  rows.push(['Total Horas Trabajadas', totalHours]);
-  rows.push(['Horas Esperadas', expected]);
-  rows.push(['TOTAL HORAS EXTRA', totalOT]);
+  rows.push([T('csvSummary')]);
+  rows.push([T('csvTotalDays'), entries.length]);
+  rows.push([T('csvTotalHours'), totalHours]);
+  rows.push([T('csvExpected'), expected]);
+  rows.push([T('csvTotalOT'), totalOT]);
 
   const weeks = {};
-  entries.forEach(e => {
-    const wk = getISOWeek(e.date);
-    (weeks[wk] = weeks[wk] || []).push(e);
-  });
+  entries.forEach(e => { const wk = getISOWeek(e.date); (weeks[wk] = weeks[wk] || []).push(e); });
 
   rows.push([]);
-  rows.push(['DESGLOSE SEMANAL']);
-  rows.push(['Semana', 'Días', 'Horas Trabajadas', 'Horas Esperadas', 'Horas Extra']);
+  rows.push([T('csvWeeklyBreakdown')]);
+  rows.push([T('csvWeekCol'), T('csvDaysCol'), T('csvWorkedCol'), T('csvExpectedCol'), T('csvOTCol')]);
   for (const wk of Object.keys(weeks).sort((a, b) => a - b)) {
     const we = weeks[wk];
     const wh = Math.round(we.reduce((s, e) => s + e.hours, 0) * 100) / 100;
@@ -884,21 +1091,22 @@ function downloadFile(filename, content) {
 
 function downloadMonthCSV() {
   const month = document.getElementById('export-month').value;
-  if (!month) { toast('⚠️ No hay datos para exportar'); return; }
+  if (!month) { toast(T('msgNoExport')); return; }
   const entries = getEntries().filter(e => e.date.slice(0, 7) === month);
-  downloadFile(`horas_extra_${month}.csv`, buildCSV(entries));
-  toast(`📥 Descargado horas_extra_${month}.csv`);
+  const fname = `horas_extra_${month}.csv`;
+  downloadFile(fname, buildCSV(entries));
+  toast(T('msgDownloaded')(fname));
 }
 
 function downloadAllCSV() {
   const entries = getEntries();
-  if (!entries.length) { toast('⚠️ No hay datos para exportar'); return; }
+  if (!entries.length) { toast(T('msgNoExport')); return; }
   const months = [...new Set(entries.map(e => e.date.slice(0, 7)))].sort();
   months.forEach(m => {
     const mEntries = entries.filter(e => e.date.slice(0, 7) === m);
     downloadFile(`horas_extra_${m}.csv`, buildCSV(mEntries));
   });
-  toast(`📦 Descargados ${months.length} archivo(s)`);
+  toast(T('msgDownloadedAll')(months.length));
 }
 
 // ── CSV Import ──
@@ -921,15 +1129,14 @@ function importCSV(text) {
   let imported = 0;
 
   const headerIdx = lines.findIndex(l =>
-    (l.toLowerCase().includes('fecha') || l.toLowerCase().includes('date')) &&
+    (l.toLowerCase().includes('fecha') || l.toLowerCase().includes('data') || l.toLowerCase().includes('date')) &&
     (l.toLowerCase().includes('entrada') || l.toLowerCase().includes('start'))
   );
-  if (headerIdx < 0) { toast('⚠️ Formato de CSV inválido'); return; }
+  if (headerIdx < 0) { toast(T('msgInvalidCSV')); return; }
 
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i]);
-    if (!cols[0] || cols[0] === 'RESUMEN' || cols[0] === 'RESUMEN DEL MES' ||
-        cols[0] === 'SUMMARY' || cols[0] === 'DESGLOSE SEMANAL' || cols[0] === 'WEEKLY BREAKDOWN') break;
+    if (!cols[0] || /^(RESUMEN|RESUMO|SUMMARY|DESGLOSE|DETALHE|WEEKLY)/.test(cols[0])) break;
 
     const date = cols[0];
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
@@ -950,7 +1157,7 @@ function importCSV(text) {
   }
 
   saveEntries(entries);
-  toast(`✅ Se importaron ${imported} registros`);
+  toast(T('msgImported')(imported));
   refresh();
 }
 
@@ -971,18 +1178,18 @@ fileInput.addEventListener('change', e => {
 });
 
 function readCSVFile(file) {
-  if (!file.name.endsWith('.csv')) { toast('⚠️ Por favor selecciona un archivo CSV'); return; }
+  if (!file.name.endsWith('.csv')) { toast(T('msgSelectCSV')); return; }
   const reader = new FileReader();
   reader.onload = e => importCSV(e.target.result);
   reader.readAsText(file);
 }
 
-// ── Borrar ──
+// ── Clear ──
 function clearAllData() {
-  if (!confirm('⚠️ Esto eliminará TODOS los registros. ¿Estás segura?')) return;
-  if (!confirm('¿De verdad segura? Esto no se puede deshacer.')) return;
+  if (!confirm(T('msgClearConfirm1'))) return;
+  if (!confirm(T('msgClearConfirm2'))) return;
   localStorage.removeItem('tt_entries');
-  toast('🗑️ Todos los datos fueron eliminados');
+  toast(T('msgCleared'));
   refresh();
 }
 
@@ -996,7 +1203,7 @@ function refresh() {
 }
 
 document.getElementById('entry-date').valueAsDate = new Date();
-refresh();
+setLang(currentLang);
 </script>
 </body>
 </html>
