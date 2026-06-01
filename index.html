@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es-VE">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⏰ Control de Horas Extra</title>
+<style>
+  :root {
+    --primary: #6c5ce7;
+    --primary-light: #a29bfe;
+    --accent: #00b894;
+    --danger: #d63031;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #2d3436;
+    --text-light: #636e72;
+    --border: #dfe6e9;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    padding: 24px 20px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  header h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  header p { opacity: 0.85; font-size: 0.9rem; }
+
+  /* Hero overtime banner */
+  .overtime-hero {
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--primary);
+  }
+  .overtime-hero .ot-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  .overtime-hero .ot-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+  }
+  .overtime-hero .ot-value.positive { color: #ff7675; }
+  .overtime-hero .ot-value.negative { color: #55efc4; }
+  .overtime-hero .ot-value.zero { color: #dfe6e9; }
+  .overtime-hero .ot-detail {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: 4px;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: var(--card);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+  }
+  .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: white;
+  }
+  .tab-btn:hover { background: #f1f0ff; }
+
+  .tab-content { display: none; margin-top: 16px; }
+  .tab-content.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: var(--primary);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #5b4cdb; }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: #00a383; }
+  .btn-danger { background: var(--danger); color: white; font-size: 0.75rem; padding: 4px 10px; }
+  .btn-danger:hover { background: #c0392b; }
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+  .btn-outline:hover { background: var(--primary); color: white; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th {
+    text-align: left;
+    padding: 10px 8px;
+    background: #f4f3ff;
+    color: var(--primary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:hover td { background: #fafafa; }
+
+  .ot-pos { color: var(--danger); font-weight: 700; }
+  .ot-neg { color: var(--accent); font-weight: 700; }
+  .ot-zero { color: var(--text-light); }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-box {
+    background: #f4f3ff;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .summary-box.highlight {
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    color: white;
+  }
+  .summary-box.highlight .label { color: rgba(255,255,255,0.7); }
+  .summary-box.highlight .value { color: white; }
+  .summary-box .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
+  .summary-box .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .month-nav button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .month-nav span { font-weight: 700; font-size: 1rem; min-width: 140px; text-align: center; }
+
+  /* Overtime bar chart */
+  .ot-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+  }
+  .ot-bar-label { width: 80px; text-align: right; color: var(--text-light); font-weight: 600; }
+  .ot-bar-track { flex: 1; height: 22px; background: #f0f0f0; border-radius: 6px; position: relative; overflow: hidden; }
+  .ot-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    min-width: fit-content;
+    transition: width 0.4s ease;
+  }
+  .ot-bar-fill.pos { background: linear-gradient(90deg, #d63031, #ff7675); }
+  .ot-bar-fill.neg { background: linear-gradient(90deg, #00b894, #55efc4); color: #2d3436; }
+  .ot-bar-fill.zero { background: #dfe6e9; color: #636e72; }
+  .ot-bar-val { width: 60px; font-weight: 700; }
+
+  .file-drop {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-light);
+  }
+  .file-drop:hover, .file-drop.dragover {
+    border-color: var(--primary);
+    background: #f4f3ff;
+    color: var(--primary);
+  }
+  .file-drop input { display: none; }
+  .file-drop .icon { font-size: 2rem; margin-bottom: 8px; }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  .week-ot-card {
+    background: #f4f3ff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .week-ot-card:hover { background: #e8e6ff; }
+  .week-ot-card .wk-info { font-size: 0.85rem; }
+  .week-ot-card .wk-info strong { color: var(--primary); }
+  .week-ot-card .wk-ot { font-size: 1.2rem; font-weight: 800; }
+
+  .detail-table { margin-top: 8px; margin-bottom: 16px; }
+
+  @media (max-width: 500px) {
+    .form-row { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .tab-btn { font-size: 0.75rem; padding: 10px 4px; }
+    .overtime-hero .ot-value { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⏰ Control de Horas Extra</h1>
+  <p>Registra tus horas y lleva el control de tu sobretiempo</p>
+</header>
+
+<div class="overtime-hero" id="overtime-hero"></div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="log">📝 Registrar</button>
+    <button class="tab-btn" data-tab="weekly">📅 Semanal</button>
+    <button class="tab-btn" data-tab="monthly">📊 Mensual</button>
+    <button class="tab-btn" data-tab="csv">💾 CSV</button>
+  </div>
+
+  <!-- REGISTRAR -->
+  <div id="tab-log" class="tab-content active">
+    <div class="card">
+      <h2>Registrar Día de Trabajo</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="entry-date">
+        </div>
+        <div class="form-group">
+          <label>Descanso (minutos)</label>
+          <input type="number" id="entry-break" value="0" min="0" step="5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hora de Entrada</label>
+          <input type="time" id="entry-start" value="09:00">
+        </div>
+        <div class="form-group">
+          <label>Hora de Salida</label>
+          <input type="time" id="entry-end" value="17:00">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addEntry()">✅ Registrar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Últimos Registros</h2>
+      <div class="table-wrap" id="recent-entries"></div>
+    </div>
+  </div>
+
+  <!-- SEMANAL -->
+  <div id="tab-weekly" class="tab-content">
+    <div class="card">
+      <div class="month-nav">
+        <button onclick="changeWeek(-1)">◀</button>
+        <span id="week-label"></span>
+        <button onclick="changeWeek(1)">▶</button>
+      </div>
+      <div class="summary-grid" id="weekly-summary"></div>
+      <h2 style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;">Horas Extra por Día</h2>
+      <div id="weekly-bars"></div>
+      <div class="table-wrap detail-table" id="weekly-table"></div>
+    </div>
+  </div>
+
+  <!-- MENSUAL -->
+  <div id="tab-monthly" class="tab-content">
+    <div class="card">
+      <div class="month-nav">
+        <button onclick="changeMonth(-1)">◀</button>
+        <span id="month-label"></span>
+        <button onclick="changeMonth(1)">▶</button>
+      </div>
+      <div class="summary-grid" id="monthly-summary"></div>
+      <h2 style="font-size:0.95rem;color:var(--primary);margin:16px 0 8px;">Horas Extra por Semana</h2>
+      <div id="monthly-week-bars"></div>
+      <div id="monthly-weeks-detail"></div>
+    </div>
+  </div>
+
+  <!-- CSV -->
+  <div id="tab-csv" class="tab-content">
+    <div class="card">
+      <h2>Subir CSV</h2>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">
+        Sube un CSV exportado anteriormente para restaurar tus datos. Se <strong>combinarán</strong> con los registros existentes.
+      </p>
+      <div class="file-drop" id="file-drop">
+        <div class="icon">📂</div>
+        <div>Haz clic o arrastra un archivo CSV aquí</div>
+        <input type="file" id="csv-upload" accept=".csv">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Descargar CSV</h2>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">
+        Exporta tus horas extra como CSV — uno por mes para llevar el control.
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mes</label>
+          <select id="export-month"></select>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;">
+          <button class="btn btn-accent" onclick="downloadMonthCSV()">📥 Descargar Mes</button>
+          <button class="btn btn-outline" onclick="downloadAllCSV()">📦 Todos</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Administrar Datos</h2>
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="clearAllData()">🗑️ Borrar Todo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STANDARD_HOURS = 8;
+const STANDARD_WEEKLY = 40;
+
+const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const DIAS_FULL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+function getEntries() {
+  return JSON.parse(localStorage.getItem('tt_entries') || '[]');
+}
+function saveEntries(entries) {
+  entries.sort((a, b) => a.date.localeCompare(b.date));
+  localStorage.setItem('tt_entries', JSON.stringify(entries));
+}
+
+function calcHours(start, end, breakMin) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let diff = (eh * 60 + em) - (sh * 60 + sm);
+  if (diff < 0) diff += 24 * 60;
+  return Math.round((diff - breakMin) / 60 * 100) / 100;
+}
+
+function fmtOT(val) {
+  const r = Math.round(val * 100) / 100;
+  const sign = r >= 0 ? '+' : '';
+  const cls = r > 0 ? 'ot-pos' : r < 0 ? 'ot-neg' : 'ot-zero';
+  return `<span class="${cls}">${sign}${r}h</span>`;
+}
+
+function fmtOTPlain(val) {
+  const r = Math.round(val * 100) / 100;
+  const sign = r >= 0 ? '+' : '';
+  return `${sign}${r}h`;
+}
+
+function dayName(dateStr) {
+  return DIAS[new Date(dateStr + 'T00:00:00').getDay()];
+}
+function dayFull(dateStr) {
+  return DIAS_FULL[new Date(dateStr + 'T00:00:00').getDay()];
+}
+
+function getISOWeek(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  return Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+}
+
+function getWeekDates(date) {
+  const d = new Date(date);
+  const day = d.getDay() || 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - day + 1);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { start: monday, end: sunday };
+}
+
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ── Overtime bar helper ──
+function renderOTBars(entries, labelFn, container) {
+  if (!entries.length) { container.innerHTML = ''; return; }
+  const maxAbs = Math.max(...entries.map(e => Math.abs(e.ot)), 1);
+
+  container.innerHTML = entries.map(e => {
+    const pct = Math.min(Math.abs(e.ot) / maxAbs * 100, 100);
+    const cls = e.ot > 0 ? 'pos' : e.ot < 0 ? 'neg' : 'zero';
+    const valCls = e.ot > 0 ? 'ot-pos' : e.ot < 0 ? 'ot-neg' : 'ot-zero';
+    return `<div class="ot-bar-row">
+      <div class="ot-bar-label">${labelFn(e)}</div>
+      <div class="ot-bar-track">
+        <div class="ot-bar-fill ${cls}" style="width:${Math.max(pct, 8)}%">${fmtOTPlain(e.ot)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Hero Banner ──
+function renderHero() {
+  const entries = getEntries();
+  const el = document.getElementById('overtime-hero');
+
+  if (!entries.length) {
+    el.innerHTML = `
+      <div class="ot-label">Horas Extra Acumuladas</div>
+      <div class="ot-value zero">0h</div>
+      <div class="ot-detail">Registra tu primer día para empezar</div>`;
+    return;
+  }
+
+  const totalHours = entries.reduce((s, e) => s + e.hours, 0);
+  const expected = entries.length * STANDARD_HOURS;
+  const balance = Math.round((totalHours - expected) * 100) / 100;
+  const cls = balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'zero';
+  const sign = balance >= 0 ? '+' : '';
+
+  // Current month OT
+  const now = new Date();
+  const monthKey = now.toISOString().slice(0, 7);
+  const monthEntries = entries.filter(e => e.date.slice(0, 7) === monthKey);
+  const monthHours = monthEntries.reduce((s, e) => s + e.hours, 0);
+  const monthExp = monthEntries.length * STANDARD_HOURS;
+  const monthOT = Math.round((monthHours - monthExp) * 100) / 100;
+  const monthSign = monthOT >= 0 ? '+' : '';
+
+  el.innerHTML = `
+    <div class="ot-label">Horas Extra Acumuladas (Total)</div>
+    <div class="ot-value ${cls}">${sign}${balance}h</div>
+    <div class="ot-detail">${MESES[now.getMonth()]} ${now.getFullYear()}: ${monthSign}${monthOT}h extra · ${entries.length} días registrados en total</div>`;
+}
+
+// ── Tabs ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    refresh();
+  });
+});
+
+// ── Registrar ──
+function addEntry() {
+  const date = document.getElementById('entry-date').value;
+  const start = document.getElementById('entry-start').value;
+  const end = document.getElementById('entry-end').value;
+  const breakMin = parseInt(document.getElementById('entry-break').value) || 0;
+
+  if (!date || !start || !end) { toast('⚠️ Por favor llena todos los campos'); return; }
+
+  const hours = calcHours(start, end, breakMin);
+  if (hours <= 0) { toast('⚠️ Rango de horas inválido'); return; }
+
+  const overtime = Math.round((hours - STANDARD_HOURS) * 100) / 100;
+  const entries = getEntries();
+
+  const existing = entries.findIndex(e => e.date === date);
+  if (existing >= 0) {
+    if (!confirm(`Ya existe un registro para ${date}. ¿Deseas reemplazarlo?`)) return;
+    entries.splice(existing, 1);
+  }
+
+  entries.push({ date, start, end, breakMin, hours, overtime });
+  saveEntries(entries);
+
+  const sign = overtime >= 0 ? '+' : '';
+  toast(`✅ ${date}: ${hours}h trabajadas (${sign}${overtime}h extra)`);
+  refresh();
+}
+
+function deleteEntry(date) {
+  if (!confirm(`¿Eliminar el registro del ${date}?`)) return;
+  const entries = getEntries().filter(e => e.date !== date);
+  saveEntries(entries);
+  toast('🗑️ Registro eliminado');
+  refresh();
+}
+
+// ── Últimos Registros ──
+function renderRecent() {
+  const entries = getEntries().slice(-10).reverse();
+  const el = document.getElementById('recent-entries');
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>No hay registros todavía. ¡Registra tu primer día!</div></div>';
+    return;
+  }
+
+  el.innerHTML = `<table>
+    <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Desc.</th><th>Trabajó</th><th>Extra</th><th></th></tr>
+    ${entries.map(e => `<tr>
+      <td>${e.date}</td><td>${dayName(e.date)}</td>
+      <td>${e.start}</td><td>${e.end}</td>
+      <td>${e.breakMin}m</td><td>${e.hours}h</td>
+      <td>${fmtOT(e.overtime)}</td>
+      <td><button class="btn btn-danger" onclick="deleteEntry('${e.date}')">✕</button></td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+// ── Vista Semanal ──
+let currentWeekOffset = 0;
+
+function changeWeek(dir) {
+  currentWeekOffset += dir;
+  renderWeekly();
+}
+
+function renderWeekly() {
+  const refDate = new Date();
+  refDate.setDate(refDate.getDate() + currentWeekOffset * 7);
+  const { start, end } = getWeekDates(refDate);
+  const weekNum = getISOWeek(fmtDate(start));
+
+  document.getElementById('week-label').textContent =
+    `Semana ${weekNum} · ${fmtDate(start)} — ${fmtDate(end)}`;
+
+  const entries = getEntries().filter(e => e.date >= fmtDate(start) && e.date <= fmtDate(end));
+
+  const totalHours = Math.round(entries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+  const expected = entries.length * STANDARD_HOURS;
+  const totalOT = Math.round((totalHours - expected) * 100) / 100;
+  const vsWeek = Math.round((totalHours - STANDARD_WEEKLY) * 100) / 100;
+
+  document.getElementById('weekly-summary').innerHTML = `
+    <div class="summary-box"><div class="label">Días</div><div class="value">${entries.length}</div></div>
+    <div class="summary-box"><div class="label">Trabajó</div><div class="value">${totalHours}h</div></div>
+    <div class="summary-box"><div class="label">Esperadas</div><div class="value">${expected}h</div></div>
+    <div class="summary-box highlight"><div class="label">⏱ Horas Extra</div><div class="value">${fmtOT(totalOT)}</div></div>
+  `;
+
+  // OT bars per day
+  const barData = entries.map(e => ({
+    label: e.date,
+    ot: e.overtime,
+    day: dayName(e.date)
+  }));
+  renderOTBars(barData, e => `${e.day} ${e.label.slice(8)}`, document.getElementById('weekly-bars'));
+
+  // Detail table
+  const table = document.getElementById('weekly-table');
+  if (!entries.length) {
+    table.innerHTML = '<div class="empty-state"><div class="icon">📅</div><div>No hay registros esta semana</div></div>';
+    document.getElementById('weekly-bars').innerHTML = '';
+    return;
+  }
+
+  let cumOT = 0;
+  table.innerHTML = `<table>
+    <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Trabajó</th><th>Extra</th><th>Acumulado</th></tr>
+    ${entries.map(e => {
+      cumOT += e.overtime;
+      cumOT = Math.round(cumOT * 100) / 100;
+      return `<tr>
+        <td>${e.date}</td><td>${dayName(e.date)}</td>
+        <td>${e.start}</td><td>${e.end}</td>
+        <td>${e.hours}h</td>
+        <td>${fmtOT(e.overtime)}</td>
+        <td>${fmtOT(cumOT)}</td>
+      </tr>`;
+    }).join('')}
+    <tr style="font-weight:700;background:#f4f3ff;">
+      <td colspan="4">TOTAL SEMANA</td>
+      <td>${totalHours}h</td>
+      <td colspan="2">${fmtOT(totalOT)}</td>
+    </tr>
+  </table>`;
+}
+
+// ── Vista Mensual ──
+let currentMonthOffset = 0;
+
+function changeMonth(dir) {
+  currentMonthOffset += dir;
+  renderMonthly();
+}
+
+function renderMonthly() {
+  const now = new Date();
+  const refDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+  const monthKey = refDate.toISOString().slice(0, 7);
+  const monthLabel = `${MESES[refDate.getMonth()]} ${refDate.getFullYear()}`;
+
+  document.getElementById('month-label').textContent = monthLabel;
+
+  const entries = getEntries().filter(e => e.date.slice(0, 7) === monthKey);
+
+  const totalHours = Math.round(entries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+  const expected = entries.length * STANDARD_HOURS;
+  const totalOT = Math.round((totalHours - expected) * 100) / 100;
+
+  document.getElementById('monthly-summary').innerHTML = `
+    <div class="summary-box"><div class="label">Días</div><div class="value">${entries.length}</div></div>
+    <div class="summary-box"><div class="label">Trabajó</div><div class="value">${totalHours}h</div></div>
+    <div class="summary-box"><div class="label">Esperadas</div><div class="value">${expected}h</div></div>
+    <div class="summary-box highlight"><div class="label">⏱ Horas Extra del Mes</div><div class="value">${fmtOT(totalOT)}</div></div>
+  `;
+
+  const barsEl = document.getElementById('monthly-week-bars');
+  const detailEl = document.getElementById('monthly-weeks-detail');
+
+  if (!entries.length) {
+    barsEl.innerHTML = '';
+    detailEl.innerHTML = '<div class="empty-state"><div class="icon">📊</div><div>No hay registros este mes</div></div>';
+    return;
+  }
+
+  // Group by week
+  const weeks = {};
+  entries.forEach(e => {
+    const wk = getISOWeek(e.date);
+    (weeks[wk] = weeks[wk] || []).push(e);
+  });
+
+  // Weekly OT bars
+  const weekBarData = Object.keys(weeks).sort((a, b) => a - b).map(wk => {
+    const we = weeks[wk];
+    const wHours = we.reduce((s, e) => s + e.hours, 0);
+    const wOT = Math.round((wHours - we.length * STANDARD_HOURS) * 100) / 100;
+    return { label: wk, ot: wOT, days: we.length, hours: Math.round(wHours * 100) / 100 };
+  });
+  renderOTBars(weekBarData, e => `Sem ${e.label}`, barsEl);
+
+  // Week detail cards with expandable tables
+  let html = '';
+  for (const wk of Object.keys(weeks).sort((a, b) => a - b)) {
+    const wEntries = weeks[wk];
+    const wHours = Math.round(wEntries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+    const wOT = Math.round((wHours - wEntries.length * STANDARD_HOURS) * 100) / 100;
+
+    html += `<div class="week-ot-card" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      <div class="wk-info">
+        <strong>Semana ${wk}</strong> — ${wEntries.length} día(s) · ${wHours}h trabajadas
+      </div>
+      <div class="wk-ot">${fmtOT(wOT)}</div>
+    </div>`;
+
+    let cumOT = 0;
+    html += `<div class="table-wrap detail-table" style="display:none">
+      <table>
+        <tr><th>Fecha</th><th>Día</th><th>Entrada</th><th>Salida</th><th>Trabajó</th><th>Extra</th><th>Acumulado</th></tr>
+        ${wEntries.map(e => {
+          cumOT += e.overtime;
+          cumOT = Math.round(cumOT * 100) / 100;
+          return `<tr>
+            <td>${e.date}</td><td>${dayName(e.date)}</td>
+            <td>${e.start}</td><td>${e.end}</td>
+            <td>${e.hours}h</td>
+            <td>${fmtOT(e.overtime)}</td>
+            <td>${fmtOT(cumOT)}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>`;
+  }
+
+  detailEl.innerHTML = html;
+}
+
+// ── CSV Export ──
+function populateExportMonths() {
+  const entries = getEntries();
+  const months = [...new Set(entries.map(e => e.date.slice(0, 7)))].sort();
+  const sel = document.getElementById('export-month');
+  sel.innerHTML = months.length
+    ? months.map(m => {
+        const d = new Date(m + '-01T00:00:00');
+        return `<option value="${m}">${MESES[d.getMonth()]} ${d.getFullYear()}</option>`;
+      }).join('')
+    : '<option value="">Sin datos</option>';
+  if (months.length) sel.value = months[months.length - 1];
+}
+
+function buildCSV(entries) {
+  const rows = [['Fecha', 'Día', 'Semana', 'Entrada', 'Salida', 'Descanso (min)',
+                 'Horas Trabajadas', 'Horas Estándar', 'Horas Extra del Día', 'Horas Extra Acumuladas']];
+  let cumOT = 0;
+  entries.forEach(e => {
+    cumOT += e.overtime;
+    rows.push([
+      e.date, dayFull(e.date), getISOWeek(e.date), e.start, e.end,
+      e.breakMin, e.hours, STANDARD_HOURS, e.overtime, Math.round(cumOT * 100) / 100
+    ]);
+  });
+
+  const totalHours = Math.round(entries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+  const expected = entries.length * STANDARD_HOURS;
+  const totalOT = Math.round((totalHours - expected) * 100) / 100;
+
+  rows.push([]);
+  rows.push(['RESUMEN DEL MES']);
+  rows.push(['Total Días Trabajados', entries.length]);
+  rows.push(['Total Horas Trabajadas', totalHours]);
+  rows.push(['Horas Esperadas', expected]);
+  rows.push(['TOTAL HORAS EXTRA', totalOT]);
+
+  const weeks = {};
+  entries.forEach(e => {
+    const wk = getISOWeek(e.date);
+    (weeks[wk] = weeks[wk] || []).push(e);
+  });
+
+  rows.push([]);
+  rows.push(['DESGLOSE SEMANAL']);
+  rows.push(['Semana', 'Días', 'Horas Trabajadas', 'Horas Esperadas', 'Horas Extra']);
+  for (const wk of Object.keys(weeks).sort((a, b) => a - b)) {
+    const we = weeks[wk];
+    const wh = Math.round(we.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+    const wExp = we.length * STANDARD_HOURS;
+    rows.push([wk, we.length, wh, wExp, Math.round((wh - wExp) * 100) / 100]);
+  }
+
+  return rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadMonthCSV() {
+  const month = document.getElementById('export-month').value;
+  if (!month) { toast('⚠️ No hay datos para exportar'); return; }
+  const entries = getEntries().filter(e => e.date.slice(0, 7) === month);
+  downloadFile(`horas_extra_${month}.csv`, buildCSV(entries));
+  toast(`📥 Descargado horas_extra_${month}.csv`);
+}
+
+function downloadAllCSV() {
+  const entries = getEntries();
+  if (!entries.length) { toast('⚠️ No hay datos para exportar'); return; }
+  const months = [...new Set(entries.map(e => e.date.slice(0, 7)))].sort();
+  months.forEach(m => {
+    const mEntries = entries.filter(e => e.date.slice(0, 7) === m);
+    downloadFile(`horas_extra_${m}.csv`, buildCSV(mEntries));
+  });
+  toast(`📦 Descargados ${months.length} archivo(s)`);
+}
+
+// ── CSV Import ──
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += line[i]; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function importCSV(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const entries = getEntries();
+  let imported = 0;
+
+  const headerIdx = lines.findIndex(l =>
+    (l.toLowerCase().includes('fecha') || l.toLowerCase().includes('date')) &&
+    (l.toLowerCase().includes('entrada') || l.toLowerCase().includes('start'))
+  );
+  if (headerIdx < 0) { toast('⚠️ Formato de CSV inválido'); return; }
+
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (!cols[0] || cols[0] === 'RESUMEN' || cols[0] === 'RESUMEN DEL MES' ||
+        cols[0] === 'SUMMARY' || cols[0] === 'DESGLOSE SEMANAL' || cols[0] === 'WEEKLY BREAKDOWN') break;
+
+    const date = cols[0];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+
+    const start = cols[3];
+    const end = cols[4];
+    const breakMin = parseInt(cols[5]) || 0;
+    const hours = parseFloat(cols[6]) || 0;
+    const overtime = parseFloat(cols[8]) || 0;
+
+    if (!start || !end) continue;
+
+    const existing = entries.findIndex(e => e.date === date);
+    if (existing >= 0) entries.splice(existing, 1);
+
+    entries.push({ date, start, end, breakMin, hours, overtime });
+    imported++;
+  }
+
+  saveEntries(entries);
+  toast(`✅ Se importaron ${imported} registros`);
+  refresh();
+}
+
+const fileDrop = document.getElementById('file-drop');
+const fileInput = document.getElementById('csv-upload');
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) readCSVFile(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) readCSVFile(e.target.files[0]);
+});
+
+function readCSVFile(file) {
+  if (!file.name.endsWith('.csv')) { toast('⚠️ Por favor selecciona un archivo CSV'); return; }
+  const reader = new FileReader();
+  reader.onload = e => importCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+// ── Borrar ──
+function clearAllData() {
+  if (!confirm('⚠️ Esto eliminará TODOS los registros. ¿Estás segura?')) return;
+  if (!confirm('¿De verdad segura? Esto no se puede deshacer.')) return;
+  localStorage.removeItem('tt_entries');
+  toast('🗑️ Todos los datos fueron eliminados');
+  refresh();
+}
+
+// ── Init ──
+function refresh() {
+  renderHero();
+  renderRecent();
+  renderWeekly();
+  renderMonthly();
+  populateExportMonths();
+}
+
+document.getElementById('entry-date').valueAsDate = new Date();
+refresh();
+</script>
+</body>
+</html>
